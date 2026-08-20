@@ -1,0 +1,95 @@
+// --- CONFIGURAREA INIȚIALĂ ---
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+// --- ENUMERĂRI (Valori predefinite) ---
+enum Role {
+  CUSTOMER  // Client obișnuit
+  EMPLOYEE  // Angajat Oneves (poate procesa comenzi, modifica stocuri)
+  ADMIN     // Administrator (drepturi depline)
+}
+
+enum OrderStatus {
+  PENDING     // Comandă plasată, neplătită/neconfirmată
+  PROCESSING  // În curs de procesare de către un angajat
+  SHIPPED     // Predată curierului
+  DELIVERED   // Livrată cu succes
+  CANCELLED   // Anulată
+}
+
+// --- TABELUL UTILIZATORI (Clienți & Angajați) ---
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("USER")
+  createdAt DateTime @default(now())
+  orders    Order[]  // <--- Aceasta este linia care rezolvă eroarea!
+}
+
+// --- TABELUL CATEGORII (Ex: Laptopuri, Telefoane, Electrocasnice) ---
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique // Ex: "telefoane-mobile" (pentru URL-uri SEO-friendly)
+  description String?
+  
+  products    Product[] // Legătura către produsele din această categorie
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// --- TABELUL PRODUSE ---
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  slug        String      @unique // Ex: "samsung-galaxy-s24-ultra"
+  description String      @db.Text
+  price       Decimal     @db.Decimal(10, 2) // Folosim Decimal pentru precizie financiară, NU Float
+  stock       Int         @default(0)        // Gestiunea stocului pentru angajați
+  imageUrl    String?     // Link către imaginea principală
+  
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  
+  orderItems  OrderItem[] // Legătura cu comenzile în care se află acest produs
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// --- TABELUL COMENZI (Informația generală a facturii) ---
+model Order {
+  id          String      @id @default(uuid())
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  
+  items       OrderItem[] // Produsele specifice din această comandă
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// --- TABELUL PRODUSE-COMANDATE (Liniile facturii) ---
+model OrderItem {
+  id        String  @id @default(uuid())
+  quantity  Int
+  price     Decimal @db.Decimal(10, 2) // FOARTE IMPORTANT: Salvăm prețul din momentul achiziției!
+  
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
