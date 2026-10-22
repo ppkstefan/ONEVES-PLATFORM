@@ -7,17 +7,5 @@
     "start": "node index.js"
   },
   "author": "Stefan",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/node": "^26.2.0",
-    "prisma": "^7.9.1"
-  },
-  "dependencies": {
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "pg": "^8.23.0"
-  }
+  "license": "ISC"
 }
