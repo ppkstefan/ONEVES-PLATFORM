@@ -1,0 +1,3 @@
+backend: node index.js
+frontend: npm run dev
+prisma: npx prisma studio
